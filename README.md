@@ -41,7 +41,7 @@ It also includes a lightweight web dashboard to visualize the latest monitoring 
 
 The web dashboard provides a simple overview of the Raspberry Pi's current health.
 
-<!-- Dashboard screenshot will be added here -->
+![Raspberry Pi Health Dashboard](docs/images/dashboard.png)
 
 ## Technologies
 
