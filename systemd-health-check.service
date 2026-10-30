@@ -1,0 +1,8 @@
+[Unit]
+Description=Raspberry Pi System Health Monitor
+After=network.target
+
+[Service]
+Type=oneshot
+User=ubuntu
+ExecStart=/home/ubuntu/raspberry-pi-health-monitor/scripts/health-check.sh

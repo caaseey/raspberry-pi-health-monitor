@@ -1,0 +1,10 @@
+# Python
+__pycache__/
+
+# Temporary files
+*.tmp
+*.log
+
+# Local reports
+reports/*
+!reports/.gitkeep
