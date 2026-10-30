@@ -122,3 +122,31 @@ The following scenarios were tested:
 **Result:** 5 out of 5 tests passed.
 
 These tests validate the threshold evaluation function. They do not simulate actual system resource conditions.
+
+## 10. Simulation Mode
+
+The monitoring script includes a simulation mode to test different system health conditions without modifying actual system resources.
+
+Run all scenarios:
+
+```bash
+./scripts/health-check.sh --test
+```
+
+Run an individual scenario:
+
+```bash
+./scripts/health-check.sh --test ok
+./scripts/health-check.sh --test warning
+./scripts/health-check.sh --test critical
+```
+
+| Scenario | Simulated RAM | Expected Status |
+|---|---:|---|
+| OK | 30% | OK |
+| WARNING | 85% | WARNING |
+| CRITICAL | 95% | CRITICAL |
+
+**Result:** All three scenarios passed successfully.
+
+Simulation mode does not generate monitoring reports or modify actual system resources.

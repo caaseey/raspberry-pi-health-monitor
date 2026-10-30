@@ -2,36 +2,71 @@
 
 # Raspberry Pi System Health Monitor
 
-HOSTNAME=$(hostname)
-DATE=$(date '+%Y-%m-%d %H:%M:%S')
+MODE="normal"
+SCENARIO=""
 
-# CPU load
-CPU_LOAD=$(awk '{print $1}' /proc/loadavg)
+if [ "$1" = "--test" ]; then
+    MODE="test"
+    SCENARIO="${2:-all}"
 
-# RAM usage
-RAM_TOTAL=$(free -m | awk '/^Mem:/ {print $2}')
-RAM_USED=$(free -m | awk '/^Mem:/ {print $3}')
-RAM_PERCENT=$((RAM_USED * 100 / RAM_TOTAL))
-
-# Disk usage
-DISK_PERCENT=$(df -P / | awk 'NR==2 {gsub("%","",$5); print $5}')
-
-# CPU temperature
-if [ -r /sys/class/thermal/thermal_zone0/temp ]; then
-    TEMP_RAW=$(cat /sys/class/thermal/thermal_zone0/temp)
-    CPU_TEMP=$(awk "BEGIN {printf \"%.1f\", $TEMP_RAW / 1000}")
-else
-    CPU_TEMP="N/A"
+    if [ "$SCENARIO" = "all" ]; then
+        for TEST in ok warning critical; do
+            "$0" --test "$TEST"
+        done
+        exit 0
+    fi
 fi
 
-# Uptime
+if [ "$MODE" = "test" ]; then
+    case "$SCENARIO" in
+        ok)
+            RAM_PERCENT=30
+            DISK_PERCENT=20
+            CPU_TEMP=50
+            FAILED_SERVICES=0
+            ;;
+        warning)
+            RAM_PERCENT=85
+            DISK_PERCENT=20
+            CPU_TEMP=50
+            FAILED_SERVICES=0
+            ;;
+        critical)
+            RAM_PERCENT=95
+            DISK_PERCENT=20
+            CPU_TEMP=50
+            FAILED_SERVICES=0
+            ;;
+        all)
+            ;;
+        *)
+            echo "Usage: $0 --test [ok|warning|critical|all]"
+            exit 1
+            ;;
+    esac
+fi
+
+HOSTNAME=$(hostname)
+DATE=$(date '+%Y-%m-%d %H:%M:%S')
+CPU_LOAD=$(awk '{print $1}' /proc/loadavg)
 UPTIME=$(uptime -p)
 
-# Failed services
-FAILED_SERVICES=$(systemctl --failed --no-legend --plain | wc -l)
+if [ "$MODE" = "normal" ]; then
+    RAM_TOTAL=$(free -m | awk '/^Mem:/ {print $2}')
+    RAM_USED=$(free -m | awk '/^Mem:/ {print $3}')
+    RAM_PERCENT=$((RAM_USED * 100 / RAM_TOTAL))
 
-# Alert evaluation
-STATUS="OK"
+    DISK_PERCENT=$(df -P / | awk 'NR==2 {gsub("%","",$5); print $5}')
+
+    if [ -r /sys/class/thermal/thermal_zone0/temp ]; then
+        TEMP_RAW=$(cat /sys/class/thermal/thermal_zone0/temp)
+        CPU_TEMP=$(awk "BEGIN {printf \"%.1f\", $TEMP_RAW / 1000}")
+    else
+        CPU_TEMP="N/A"
+    fi
+
+    FAILED_SERVICES=$(systemctl --failed --no-legend --plain | wc -l)
+fi
 
 check_threshold() {
     local value=$1
@@ -62,7 +97,8 @@ else
     TEMP_STATUS="UNKNOWN"
 fi
 
-# Overall status
+STATUS="OK"
+
 for result in "$RAM_STATUS" "$DISK_STATUS" "$SERVICE_STATUS" "$TEMP_STATUS"; do
     if [ "$result" = "CRITICAL" ]; then
         STATUS="CRITICAL"
@@ -72,10 +108,10 @@ for result in "$RAM_STATUS" "$DISK_STATUS" "$SERVICE_STATUS" "$TEMP_STATUS"; do
     fi
 done
 
-# Report
 echo "======================================"
 echo " RASPBERRY PI HEALTH MONITOR"
 echo "======================================"
+echo "Mode:             $MODE"
 echo "Hostname:         $HOSTNAME"
 echo "Date:             $DATE"
 echo "CPU Load:         $CPU_LOAD"
@@ -88,7 +124,11 @@ echo "======================================"
 echo "OVERALL STATUS:   $STATUS"
 echo "======================================"
 
-# Save report
+# Test mode does not generate reports
+if [ "$MODE" = "test" ]; then
+    exit 0
+fi
+
 REPORT_DIR="$HOME/raspberry-pi-health-monitor/reports"
 REPORT_FILE="$REPORT_DIR/health-$(date '+%Y-%m-%d_%H%M%S').md"
 
@@ -109,5 +149,5 @@ mkdir -p "$REPORT_DIR"
 } > "$REPORT_FILE"
 
 echo "Report saved: $REPORT_FILE"
-# Remove reports older than 30 days
+
 find "$REPORT_DIR" -type f -name 'health-*.md' -mtime +30 -delete
