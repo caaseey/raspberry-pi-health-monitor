@@ -1,0 +1,22 @@
+[Unit]
+Description=Raspberry Pi Health Monitor read-only dashboard
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/raspberry-pi-health-monitor
+ExecStart=/usr/bin/python3 /home/ubuntu/raspberry-pi-health-monitor/dashboard/health-dashboard.py --host 192.168.1.48 --port 8080
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+UMask=0027
+
+[Install]
+WantedBy=multi-user.target
