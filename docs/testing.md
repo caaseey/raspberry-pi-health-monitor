@@ -96,3 +96,29 @@ Warning and critical scenarios have not yet been tested.
 The basic monitoring workflow, report generation and systemd execution have been verified successfully.
 
 Further testing is needed to validate WARNING and CRITICAL conditions.
+
+## 9. Automated Threshold Tests
+
+A test script was created to validate the `check_threshold()` function independently.
+
+Test file: `tests/test-thresholds.sh`
+
+The following scenarios were tested:
+
+| Test | Input | Expected Result | Actual Result |
+|---|---:|---|---|
+| Normal usage | 50% | OK | PASS |
+| Warning threshold | 80% | WARNING | PASS |
+| Critical threshold | 90% | CRITICAL | PASS |
+| Between thresholds | 85% | WARNING | PASS |
+| Below warning | 79% | OK | PASS |
+
+**Test execution:**
+
+```bash
+./tests/test-thresholds.sh
+```
+
+**Result:** 5 out of 5 tests passed.
+
+These tests validate the threshold evaluation function. They do not simulate actual system resource conditions.
